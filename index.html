@@ -235,17 +235,11 @@
             pointer-events: none;
             overflow-y: auto;
             overflow-x: hidden;
-            scroll-behavior: smooth;
             -webkit-overflow-scrolling: touch;
-            scroll-snap-type: y proximity;
             overscroll-behavior: auto;
             -webkit-transform: translateZ(0);
             transform: translateZ(0);
             will-change: scroll-position;
-            -webkit-backface-visibility: hidden;
-            backface-visibility: hidden;
-            -webkit-perspective: 1000px;
-            perspective: 1000px;
         }
 
         .tab-content.active {
@@ -254,7 +248,7 @@
             pointer-events: auto;
         }
 
-        /* iOS-подобный скроллбар */
+        /* Скрытый скроллбар */
         .tab-content::-webkit-scrollbar {
             width: 0;
             background: transparent;
@@ -275,6 +269,26 @@
         /* Стили для Firefox */
         .tab-content {
             scrollbar-width: none;
+        }
+
+        /* Оптимизация скроллинга */
+        .tab-content * {
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+        }
+
+        /* Улучшение производительности для карточек */
+        .card, .stat-card, .order-item {
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+            will-change: transform;
+        }
+
+        /* Оптимизация для лучшей отзывчивости */
+        .tab-content {
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+            will-change: scroll-position;
         }
 
         /* Исправление отображения вкладок */
@@ -302,6 +316,20 @@
             -webkit-touch-callout: none;
             -webkit-user-select: none;
             user-select: none;
+        }
+
+        /* Улучшение отзывчивости скроллинга */
+        .tab-content {
+            touch-action: pan-y;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: auto;
+        }
+
+        /* Оптимизация для лучшей производительности */
+        .tab-content > * {
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+            will-change: auto;
         }
 
         /* Разрешаем выделение текста в полях ввода */
@@ -2241,7 +2269,7 @@
         `;
         document.head.appendChild(style);
 
-        // Улучшенный плавный скроллинг для мобильных устройств
+        // Улучшенный нативный скроллинг для мобильных устройств
         function initSmoothScrolling() {
             const tabContents = document.querySelectorAll('.tab-content');
             
@@ -2249,20 +2277,23 @@
                 let startY = 0;
                 let startScrollTop = 0;
                 let isScrolling = false;
+                let velocities = [];
+                let lastTime = 0;
                 let lastY = 0;
-                let velocity = 0;
-                let animationFrame = null;
+                let animationId = null;
                 
                 // Touch события для плавного скроллинга
                 content.addEventListener('touchstart', function(e) {
                     startY = e.touches[0].clientY;
                     startScrollTop = content.scrollTop;
                     lastY = startY;
+                    lastTime = Date.now();
                     isScrolling = true;
-                    velocity = 0;
+                    velocities = [];
                     
-                    if (animationFrame) {
-                        cancelAnimationFrame(animationFrame);
+                    // Останавливаем предыдущую анимацию
+                    if (animationId) {
+                        cancelAnimationFrame(animationId);
                     }
                 }, { passive: true });
                 
@@ -2270,30 +2301,39 @@
                     if (!isScrolling) return;
                     
                     const currentY = e.touches[0].clientY;
+                    const currentTime = Date.now();
                     const deltaY = currentY - lastY;
-                    const deltaTime = 16; // 60fps
+                    const deltaTime = currentTime - lastTime;
                     
-                    // Рассчитываем скорость
-                    velocity = deltaY / deltaTime;
+                    if (deltaTime > 0) {
+                        const velocity = deltaY / deltaTime;
+                        velocities.push(velocity);
+                        
+                        // Ограничиваем массив скоростей
+                        if (velocities.length > 3) {
+                            velocities.shift();
+                        }
+                    }
                     
-                    // Применяем скролл с плавностью
+                    // Прямое управление скроллом
                     const newScrollTop = content.scrollTop - deltaY;
                     const maxScroll = content.scrollHeight - content.clientHeight;
                     
                     if (newScrollTop < 0) {
-                        // Эффект отскока при достижении верха
-                        content.scrollTop = newScrollTop * 0.3;
+                        // Мягкий отскок при достижении верха
+                        content.scrollTop = newScrollTop * 0.1;
                         e.preventDefault();
                     } else if (newScrollTop > maxScroll) {
-                        // Эффект отскока при достижении низа
+                        // Мягкий отскок при достижении низа
                         const overscroll = newScrollTop - maxScroll;
-                        content.scrollTop = maxScroll + overscroll * 0.3;
+                        content.scrollTop = maxScroll + overscroll * 0.1;
                         e.preventDefault();
                     } else {
                         content.scrollTop = newScrollTop;
                     }
                     
                     lastY = currentY;
+                    lastTime = currentTime;
                 }, { passive: false });
                 
                 content.addEventListener('touchend', function(e) {
@@ -2301,15 +2341,19 @@
                     
                     isScrolling = false;
                     
-                    // Применяем инерцию
-                    if (Math.abs(velocity) > 0.5) {
-                        const momentum = velocity * 300;
+                    // Вычисляем среднюю скорость
+                    const avgVelocity = velocities.length > 0 ? 
+                        velocities.reduce((a, b) => a + b, 0) / velocities.length : 0;
+                    
+                    // Применяем инерцию только при достаточной скорости
+                    if (Math.abs(avgVelocity) > 0.5) {
+                        const momentum = avgVelocity * 100;
                         const currentScroll = content.scrollTop;
                         const maxScroll = content.scrollHeight - content.clientHeight;
                         const targetScroll = Math.max(0, Math.min(maxScroll, currentScroll - momentum));
                         
                         // Плавная анимация до целевой позиции
-                        animateScrollTo(content, currentScroll, targetScroll, 800);
+                        animateScrollTo(content, currentScroll, targetScroll, 400);
                     }
                 }, { passive: true });
             });
@@ -2330,11 +2374,11 @@
                 element.scrollTop = currentScroll;
                 
                 if (progress < 1) {
-                    animationFrame = requestAnimationFrame(animate);
+                    requestAnimationFrame(animate);
                 }
             }
             
-            animationFrame = requestAnimationFrame(animate);
+            requestAnimationFrame(animate);
         }
         
         // Функция анимации скроллинга с iOS-подобным easing
@@ -2530,6 +2574,8 @@
     </nav>
 </body>
 </html> 
+</html> 
+
 
 
 
