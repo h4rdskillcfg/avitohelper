@@ -8,10 +8,14 @@
     <meta name="author" content="Avito Manager">
     <meta name="theme-color" content="#667eea">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Avito Manager">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="format-detection" content="telephone=no">
+    <meta name="standalone" content="yes">
+    <meta name="fullscreen" content="yes">
+    <meta name="browsermode" content="application">
+    <meta name="orientation" content="portrait">
     <title>Avito Manager</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     <style>
@@ -26,6 +30,7 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             height: 100vh;
+            width: 100vw;
             overflow: hidden;
             position: fixed;
             top: 0;
@@ -44,6 +49,8 @@
             padding-bottom: env(safe-area-inset-bottom);
             padding-left: env(safe-area-inset-left);
             padding-right: env(safe-area-inset-right);
+            margin: 0;
+            box-sizing: border-box;
         }
 
         .container {
@@ -231,10 +238,14 @@
             scroll-behavior: smooth;
             -webkit-overflow-scrolling: touch;
             scroll-snap-type: y proximity;
-            overscroll-behavior: contain;
+            overscroll-behavior: auto;
             -webkit-transform: translateZ(0);
             transform: translateZ(0);
             will-change: scroll-position;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            -webkit-perspective: 1000px;
+            perspective: 1000px;
         }
 
         .tab-content.active {
@@ -309,9 +320,59 @@
             }
         }
 
+        /* Полноэкранный режим для mini app */
+        @media screen and (display-mode: standalone) {
+            body {
+                padding-top: 0;
+                padding-bottom: 0;
+                padding-left: 0;
+                padding-right: 0;
+            }
+            
+            .container {
+                border-radius: 0;
+                box-shadow: none;
+            }
+            
+            .header {
+                padding-top: env(safe-area-inset-top);
+            }
+            
+            .bottom-nav {
+                padding-bottom: calc(16px + env(safe-area-inset-bottom));
+            }
+        }
+
+        /* Standalone режим */
+        body.standalone-mode {
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+            padding-left: env(safe-area-inset-left);
+            padding-right: env(safe-area-inset-right);
+        }
+
+        body.standalone-mode .container {
+            border-radius: 0;
+            box-shadow: none;
+        }
+
+        body.standalone-mode .header {
+            padding-top: 0;
+        }
+
+        body.standalone-mode .bottom-nav {
+            padding-bottom: calc(16px + env(safe-area-inset-bottom));
+        }
+
         @keyframes slideInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+            from { 
+                opacity: 0; 
+                transform: translate3d(0, 20px, 0); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translate3d(0, 0, 0); 
+            }
         }
 
         @keyframes pulse {
@@ -344,6 +405,9 @@
             position: relative;
             overflow: hidden;
             animation: slideInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+            will-change: transform;
         }
 
         .card::before {
@@ -357,7 +421,7 @@
         }
 
         .card:hover {
-            transform: translateY(-4px);
+            transform: translate3d(0, -4px, 0);
             box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
             border-color: rgba(255, 255, 255, 0.3);
         }
@@ -432,7 +496,7 @@
 
         .btn:hover {
             background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
-            transform: translateY(-2px);
+            transform: translate3d(0, -2px, 0);
             box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
         }
 
@@ -691,7 +755,7 @@
         }
 
         .stat-card:hover {
-            transform: translateY(-2px);
+            transform: translate3d(0, -2px, 0);
             box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
             border-color: rgba(255, 255, 255, 0.3);
         }
@@ -2177,46 +2241,100 @@
         `;
         document.head.appendChild(style);
 
-        // Оптимизированный скроллинг для мобильных устройств
-        function initMobileScrolling() {
+        // Улучшенный плавный скроллинг для мобильных устройств
+        function initSmoothScrolling() {
             const tabContents = document.querySelectorAll('.tab-content');
             
             tabContents.forEach(content => {
                 let startY = 0;
                 let startScrollTop = 0;
                 let isScrolling = false;
+                let lastY = 0;
+                let velocity = 0;
+                let animationFrame = null;
                 
-                // Touch события для мобильного скроллинга
+                // Touch события для плавного скроллинга
                 content.addEventListener('touchstart', function(e) {
                     startY = e.touches[0].clientY;
                     startScrollTop = content.scrollTop;
+                    lastY = startY;
                     isScrolling = true;
+                    velocity = 0;
+                    
+                    if (animationFrame) {
+                        cancelAnimationFrame(animationFrame);
+                    }
                 }, { passive: true });
                 
                 content.addEventListener('touchmove', function(e) {
                     if (!isScrolling) return;
                     
-                    const deltaY = e.touches[0].clientY - startY;
-                    const newScrollTop = startScrollTop - deltaY;
+                    const currentY = e.touches[0].clientY;
+                    const deltaY = currentY - lastY;
+                    const deltaTime = 16; // 60fps
                     
-                    // Проверяем границы скролла
+                    // Рассчитываем скорость
+                    velocity = deltaY / deltaTime;
+                    
+                    // Применяем скролл с плавностью
+                    const newScrollTop = content.scrollTop - deltaY;
                     const maxScroll = content.scrollHeight - content.clientHeight;
                     
                     if (newScrollTop < 0) {
-                        content.scrollTop = 0;
+                        // Эффект отскока при достижении верха
+                        content.scrollTop = newScrollTop * 0.3;
                         e.preventDefault();
                     } else if (newScrollTop > maxScroll) {
-                        content.scrollTop = maxScroll;
+                        // Эффект отскока при достижении низа
+                        const overscroll = newScrollTop - maxScroll;
+                        content.scrollTop = maxScroll + overscroll * 0.3;
                         e.preventDefault();
                     } else {
                         content.scrollTop = newScrollTop;
                     }
+                    
+                    lastY = currentY;
                 }, { passive: false });
                 
                 content.addEventListener('touchend', function(e) {
+                    if (!isScrolling) return;
+                    
                     isScrolling = false;
+                    
+                    // Применяем инерцию
+                    if (Math.abs(velocity) > 0.5) {
+                        const momentum = velocity * 300;
+                        const currentScroll = content.scrollTop;
+                        const maxScroll = content.scrollHeight - content.clientHeight;
+                        const targetScroll = Math.max(0, Math.min(maxScroll, currentScroll - momentum));
+                        
+                        // Плавная анимация до целевой позиции
+                        animateScrollTo(content, currentScroll, targetScroll, 800);
+                    }
                 }, { passive: true });
             });
+        }
+        
+        // Функция плавной анимации скролла
+        function animateScrollTo(element, start, end, duration) {
+            const startTime = performance.now();
+            
+            function animate(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                // Плавная easing функция
+                const easeOutCubic = 1 - Math.pow(1 - progress, 3);
+                const currentScroll = start + (end - start) * easeOutCubic;
+                
+                element.scrollTop = currentScroll;
+                
+                if (progress < 1) {
+                    animationFrame = requestAnimationFrame(animate);
+                }
+            }
+            
+            animationFrame = requestAnimationFrame(animate);
         }
         
         // Функция анимации скроллинга с iOS-подобным easing
@@ -2243,8 +2361,20 @@
 
         // Инициализация приложения
         document.addEventListener('DOMContentLoaded', function() {
-            // Инициализация мобильного скроллинга
-            initMobileScrolling();
+            // Инициализация плавного скроллинга
+            initSmoothScrolling();
+            
+            // Принудительный полноэкранный режим
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log('Полноэкранный режим недоступен:', err);
+                });
+            }
+            
+            // Скрытие адресной строки на мобильных устройствах
+            if ('standalone' in window.navigator && window.navigator.standalone) {
+                document.body.classList.add('standalone-mode');
+            }
             
             // Имитация загрузки данных с Avito API
             console.log('Приложение загружено');
