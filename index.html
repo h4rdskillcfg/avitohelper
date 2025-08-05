@@ -3,8 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Avito Manager - управление заказами и товарами">
+    <meta name="keywords" content="avito, manager, заказы, товары, управление">
+    <meta name="author" content="Avito Manager">
+    <meta name="theme-color" content="#667eea">
     <title>Avito Manager</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     <style>
         * {
             margin: 0;
@@ -14,28 +18,37 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             overflow-x: hidden;
+            position: relative;
+            color: #333;
         }
 
         .container {
             max-width: 400px;
             margin: 0 auto;
-            background: white;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             min-height: 100vh;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             position: relative;
+            overflow-x: hidden;
+            padding-bottom: 100px;
         }
 
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 20px;
+            padding: 25px 20px;
             text-align: center;
             position: sticky;
             top: 0;
             z-index: 100;
+            box-shadow: 0 2px 20px rgba(102, 126, 234, 0.3);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .header h1 {
@@ -50,17 +63,108 @@
             position: sticky;
             top: 80px;
             z-index: 99;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 400px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            justify-content: space-around;
+            padding: 16px 0;
+            z-index: 9999;
+            box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.1);
+            border-radius: 20px 20px 0 0;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px 8px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 12px;
+            min-width: 60px;
+            background: none;
+            border: none;
+            color: inherit;
+            font: inherit;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            border-radius: 12px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .nav-item:hover::before {
+            opacity: 1;
+        }
+
+        .nav-item.active {
+            color: #667eea;
+        }
+
+        .nav-item.active::before {
+            opacity: 1;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.15), rgba(118, 75, 162, 0.15));
+        }
+
+        .nav-item.active .nav-icon {
+            transform: scale(1.1);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+            transition: transform 0.3s ease;
+        }
+
+        .nav-label {
+            font-size: 10px;
+            font-weight: 500;
+            color: #666;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .nav-item.active .nav-label {
+            color: #667eea;
+            font-weight: 600;
         }
 
         .tab {
             flex: 1;
-            padding: 15px;
+            min-width: 80px;
+            padding: 12px 8px;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s ease;
             border-bottom: 3px solid transparent;
             font-weight: 500;
             color: #666;
+            font-size: 13px;
+            white-space: nowrap;
         }
 
         .tab.active {
@@ -69,42 +173,143 @@
             background: rgba(102, 126, 234, 0.05);
         }
 
+        .tab-container {
+            position: relative;
+            overflow: hidden;
+            height: calc(100vh - 120px);
+        }
+
+        .tab-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: calc(100vh - 120px);
+            padding: 20px;
+            padding-bottom: 120px;
+            transition: opacity 0.3s ease-in-out;
+            opacity: 0;
+            pointer-events: none;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            scroll-snap-type: y proximity;
+            overscroll-behavior: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .tab-content.active {
+            transform: translateX(0) !important;
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* iOS-подобный скроллбар */
+        .tab-content::-webkit-scrollbar {
+            width: 0;
+            background: transparent;
+        }
+
+        .tab-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .tab-content::-webkit-scrollbar-thumb {
+            background: transparent;
+        }
+
+        .tab-content::-webkit-scrollbar-thumb:hover {
+            background: transparent;
+        }
+
+        /* Стили для Firefox */
+        .tab-content {
+            scrollbar-width: none;
+        }
+
+        /* Исправление отображения вкладок */
         .tab-content {
             display: none;
-            padding: 20px;
-            animation: fadeIn 0.3s ease;
         }
 
         .tab-content.active {
             display: block;
+            transform: translateX(0) !important;
+            opacity: 1;
+            pointer-events: auto;
         }
+
+
 
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200px 0; }
+            100% { background-position: calc(200px + 100%) 0; }
+        }
+
+        .loading {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200px 100%;
+            animation: shimmer 1.5s infinite;
+        }
+
         .card {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: #333;
+            position: relative;
+            overflow: hidden;
+            animation: slideInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
         }
 
         .card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
         }
 
         .order-item {
             border-left: 4px solid #667eea;
             margin-bottom: 15px;
             padding: 15px;
-            background: white;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .order-item.completed {
@@ -116,6 +321,7 @@
             font-weight: 600;
             color: #333;
             margin-bottom: 8px;
+            word-wrap: break-word;
         }
 
         .order-price {
@@ -134,17 +340,42 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
+            padding: 14px 28px;
+            border-radius: 12px;
             cursor: pointer;
-            font-weight: 500;
-            transition: all 0.3s ease;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             margin: 5px;
+            font-size: 14px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
         }
 
         .btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:active {
+            transform: translateY(0);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
         }
 
         .btn-secondary {
@@ -159,6 +390,53 @@
 
         .input-group {
             margin-bottom: 15px;
+        }
+
+        form {
+            display: block;
+        }
+
+        /* Стили для списка активности */
+        .activity-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .activity-icon {
+            font-size: 20px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 50%;
+        }
+
+        .activity-content {
+            flex: 1;
+        }
+
+        .activity-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .activity-time {
+            font-size: 12px;
+            color: #666;
         }
 
         .input-group label {
@@ -183,7 +461,8 @@
         }
 
         .profit-card {
-            background: rgba(255, 255, 255, 0.25);
+            background: rgba(0, 128, 0, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.3);
@@ -192,7 +471,6 @@
             padding: 30px;
             border-radius: 16px;
             margin-bottom: 20px;
-            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
             position: relative;
             overflow: hidden;
         }
@@ -231,15 +509,19 @@
             align-items: center;
             padding: 15px;
             border-bottom: 1px solid #f0f0f0;
+            word-wrap: break-word;
         }
 
         .inventory-info {
             flex: 1;
+            margin-right: 15px;
         }
 
         .inventory-title {
             font-weight: 600;
             color: #333;
+            word-wrap: break-word;
+            margin-bottom: 5px;
         }
 
         .inventory-price {
@@ -261,7 +543,6 @@
         }
 
         .modal {
-            display: none;
             position: fixed;
             top: 0;
             left: 0;
@@ -270,6 +551,13 @@
             background: rgba(0,0,0,0.5);
             z-index: 1000;
             animation: fadeIn 0.3s ease;
+            border: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .modal::backdrop {
+            background: rgba(0,0,0,0.5);
         }
 
         .modal-content {
@@ -282,6 +570,9 @@
             border-radius: 12px;
             width: 90%;
             max-width: 350px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
         }
 
         .close {
@@ -301,11 +592,33 @@
         }
 
         .stat-card {
-            background: white;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             padding: 20px;
-            border-radius: 12px;
+            border-radius: 16px;
             text-align: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
         }
 
         .stat-number {
@@ -325,7 +638,10 @@
             align-items: center;
             justify-content: space-between;
             padding: 15px;
-            background: #f8f9fa;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 8px;
             margin-bottom: 20px;
         }
@@ -439,6 +755,7 @@
             border-radius: 12px;
             cursor: pointer;
             transition: background 0.3s;
+            flex-shrink: 0;
         }
 
         .auto-reply-toggle.active {
@@ -521,6 +838,9 @@
             border-radius: 20px;
             font-size: 12px;
             font-weight: 600;
+            max-width: 120px;
+            text-align: center;
+            word-wrap: break-word;
         }
 
         .delivery-status.pending {
@@ -546,6 +866,7 @@
             border-radius: 12px;
             cursor: pointer;
             transition: background 0.3s;
+            flex-shrink: 0;
         }
 
         .reminder-toggle.active {
@@ -630,6 +951,7 @@
 
         .notification-info {
             flex: 1;
+            margin-right: 15px;
         }
 
         .notification-title {
@@ -730,48 +1052,118 @@
         .push-notification {
             position: fixed;
             top: 20px;
-            left: 20px;
+            right: 20px;
             background: #4CAF50;
             color: white;
             padding: 15px 20px;
             border-radius: 8px;
             z-index: 10001;
-            animation: slideInLeft 0.3s ease;
+            animation: slideInRight 0.3s ease;
             max-width: 300px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.2);
         }
 
-        @keyframes slideInLeft {
-            from { transform: translateX(-100%); opacity: 0; }
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
 
-        @keyframes slideOutLeft {
+        @keyframes slideOutRight {
             from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
+        /* Responsive improvements */
+        @media (max-width: 480px) {
+            .container {
+                max-width: 100%;
+                margin: 0;
+            }
+            
+            .tab {
+                padding: 10px 6px;
+                font-size: 12px;
+                min-width: 70px;
+            }
+            
+            .card {
+                padding: 15px;
+                margin-bottom: 10px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+            
+            .chat-stats {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+            
+            .widget-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+            
+            .inventory-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .inventory-info {
+                margin-right: 0;
+            }
+            
+            .notification-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .notification-info {
+                margin-right: 0;
+            }
+            
+            .customization-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .auto-reply-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .review-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+            
+            .delivery-status {
+                position: static;
+                margin-bottom: 10px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
+    <main class="container">
+        <header class="header">
             <h1>Avito Manager</h1>
-        </div>
+        </header>
 
-        <div class="tab-bar">
-            <div class="tab active" onclick="switchTab('orders')">Заказы</div>
-            <div class="tab" onclick="switchTab('profile')">Профиль</div>
-            <div class="tab" onclick="switchTab('inventory')">Склад</div>
-            <div class="tab" onclick="switchTab('chat')">Чат</div>
-            <div class="tab" onclick="switchTab('delivery')">Доставка</div>
-            <div class="tab" onclick="switchTab('reviews')">Отзывы</div>
-        </div>
-
-        <!-- Заказы -->
-        <div id="orders" class="tab-content active">
+        <!-- Tab Container -->
+        <section class="tab-container">
+            <!-- Заказы -->
+            <article id="orders" class="tab-content active">
             <div class="card">
                 <h3>Актуальные заказы</h3>
-                <div id="active-orders">
+                <section id="active-orders">
                     <div class="order-item">
                         <div class="order-title">iPhone 14 Pro 128GB</div>
                         <div class="order-price">85,000 ₽</div>
@@ -802,12 +1194,11 @@
                         <div class="order-date">3 дня назад</div>
                         <div style="color: #4CAF50; font-weight: 600;">Прибыль: 12,000 ₽</div>
                     </div>
-                </div>
-            </div>
-        </div>
+
+        </article>
 
         <!-- Профиль -->
-        <div id="profile" class="tab-content">
+        <article id="profile" class="tab-content">
             <div class="profit-card">
                 <div class="profit-amount">45,500 ₽</div>
                 <div class="profit-label">Прибыль за месяц</div>
@@ -834,7 +1225,7 @@
 
             <div class="card">
                 <h3>График прибыли</h3>
-                <div style="position: relative; height: 250px;">
+                <div style="position: relative; height: 250px; width: 100%; overflow: hidden;">
                     <canvas id="profitChart"></canvas>
                 </div>
             </div>
@@ -880,10 +1271,87 @@
                     </button>
                 </div>
             </div>
-        </div>
+
+            <div class="card">
+                <h3>История активности</h3>
+                <div class="activity-list">
+                    <div class="activity-item">
+                        <div class="activity-icon">📦</div>
+                        <div class="activity-content">
+                            <div class="activity-title">Новый заказ: iPhone 14 Pro</div>
+                            <div class="activity-time">2 минуты назад</div>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-icon">💰</div>
+                        <div class="activity-content">
+                            <div class="activity-title">Прибыль: +8,500 ₽</div>
+                            <div class="activity-time">15 минут назад</div>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-icon">✅</div>
+                        <div class="activity-content">
+                            <div class="activity-title">Заказ завершен: MacBook Air</div>
+                            <div class="activity-time">1 час назад</div>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-icon">📊</div>
+                        <div class="activity-content">
+                            <div class="activity-title">Обновлена статистика</div>
+                            <div class="activity-time">2 часа назад</div>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-icon">🔄</div>
+                        <div class="activity-content">
+                            <div class="activity-title">Синхронизация с Avito</div>
+                            <div class="activity-time">3 часа назад</div>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-icon">📱</div>
+                        <div class="activity-content">
+                            <div class="activity-title">Обновление приложения</div>
+                            <div class="activity-time">1 день назад</div>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-icon">🎯</div>
+                        <div class="activity-content">
+                            <div class="activity-title">Достигнута цель продаж</div>
+                            <div class="activity-time">2 дня назад</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Аналитика продаж</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">24</div>
+                        <div class="stat-label">Заказов в месяц</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">156,000 ₽</div>
+                        <div class="stat-label">Общая выручка</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">6,500 ₽</div>
+                        <div class="stat-label">Средний чек</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">85%</div>
+                        <div class="stat-label">Конверсия</div>
+                    </div>
+                </div>
+            </div>
+        </article>
 
         <!-- Склад -->
-        <div id="inventory" class="tab-content">
+        <article id="inventory" class="tab-content">
             <div class="stock-alert" id="stockAlert" style="display: none;">
                 <div class="stock-alert-icon">⚠️</div>
                 <div>
@@ -942,12 +1410,79 @@
                         </div>
                         <button class="btn btn-secondary" onclick="updateStock(this)">Обновить</button>
                     </div>
+
+                    <div class="inventory-item">
+                        <div class="inventory-info">
+                            <div class="inventory-title">Samsung Galaxy S23</div>
+                            <div class="inventory-price">75,000 ₽</div>
+                            <div class="inventory-stock">В наличии: <input type="number" class="stock-input" value="4" min="0"></div>
+                        </div>
+                        <button class="btn btn-secondary" onclick="updateStock(this)">Обновить</button>
+                    </div>
+
+                    <div class="inventory-item">
+                        <div class="inventory-info">
+                            <div class="inventory-title">Apple Watch Series 8</div>
+                            <div class="inventory-price">35,000 ₽</div>
+                            <div class="inventory-stock">В наличии: <input type="number" class="stock-input" value="7" min="0"></div>
+                        </div>
+                        <button class="btn btn-secondary" onclick="updateStock(this)">Обновить</button>
+                    </div>
+
+                    <div class="inventory-item">
+                        <div class="inventory-info">
+                            <div class="inventory-title">MacBook Pro 14"</div>
+                            <div class="inventory-price">180,000 ₽</div>
+                            <div class="inventory-stock">В наличии: <input type="number" class="stock-input" value="2" min="0"></div>
+                        </div>
+                        <button class="btn btn-secondary" onclick="updateStock(this)">Обновить</button>
+                    </div>
+
+                    <div class="inventory-item">
+                        <div class="inventory-info">
+                            <div class="inventory-title">Sony WH-1000XM5</div>
+                            <div class="inventory-price">45,000 ₽</div>
+                            <div class="inventory-stock">В наличии: <input type="number" class="stock-input" value="6" min="0"></div>
+                        </div>
+                        <button class="btn btn-secondary" onclick="updateStock(this)">Обновить</button>
+                    </div>
+
+                    <div class="inventory-item">
+                        <div class="inventory-info">
+                            <div class="inventory-title">Google Pixel 7</div>
+                            <div class="inventory-price">55,000 ₽</div>
+                            <div class="inventory-stock">В наличии: <input type="number" class="stock-input" value="3" min="0"></div>
+                        </div>
+                        <button class="btn btn-secondary" onclick="updateStock(this)">Обновить</button>
+                    </div>
                 </div>
             </div>
-        </div>
+
+            <div class="card">
+                <h3>Статистика склада</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">12</div>
+                        <div class="stat-label">Всего товаров</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">45</div>
+                        <div class="stat-label">Общее количество</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">2</div>
+                        <div class="stat-label">Низкий остаток</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">1,250,000 ₽</div>
+                        <div class="stat-label">Общая стоимость</div>
+                    </div>
+                </div>
+            </div>
+        </article>
 
         <!-- Чат -->
-        <div id="chat" class="tab-content">
+        <article id="chat" class="tab-content">
             <div class="chat-stats">
                 <div class="chat-stat-card">
                     <div class="chat-stat-number">24</div>
@@ -1050,10 +1585,10 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </article>
 
         <!-- Доставка -->
-        <div id="delivery" class="tab-content">
+        <article id="delivery" class="tab-content">
             <div class="card">
                 <h3>Настройки напоминаний</h3>
                 <div class="notification-settings">
@@ -1131,10 +1666,10 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </article>
 
         <!-- Отзывы -->
-        <div id="reviews" class="tab-content">
+        <article id="reviews" class="tab-content">
             <div class="card">
                 <h3>Синхронизация отзывов</h3>
                 <div style="text-align: center; padding: 20px;">
@@ -1223,54 +1758,69 @@
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
+        </article>
+    </section>
+</main>
 
     <!-- Модальное окно для ввода себестоимости -->
-    <div id="costModal" class="modal">
+    <dialog id="costModal" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="closeCostModal()">&times;</span>
+            <button type="button" class="close" onclick="closeCostModal()" aria-label="Закрыть">&times;</button>
             <h3>Введите себестоимость</h3>
-            <div class="input-group">
-                <label>Товар: <span id="modal-product-name"></span></label>
-            </div>
-            <div class="input-group">
-                <label>Цена продажи: <span id="modal-sale-price"></span> ₽</label>
-            </div>
-            <div class="input-group">
-                <label for="cost-input">Себестоимость (₽):</label>
-                <input type="number" id="cost-input" placeholder="Введите себестоимость">
-            </div>
-            <button class="btn" onclick="calculateProfit()">Рассчитать прибыль</button>
+            <form onsubmit="calculateProfit(); return false;">
+                <div class="input-group">
+                    <label>Товар: <span id="modal-product-name"></span></label>
+                </div>
+                <div class="input-group">
+                    <label>Цена продажи: <span id="modal-sale-price"></span> ₽</label>
+                </div>
+                <div class="input-group">
+                    <label for="cost-input">Себестоимость (₽):</label>
+                    <input type="number" id="cost-input" placeholder="Введите себестоимость" required>
+                </div>
+                <button type="submit" class="btn">Рассчитать прибыль</button>
+            </form>
         </div>
-    </div>
+    </dialog>
 
     <script>
         let currentTab = 'orders';
         let currentOrder = null;
 
         function switchTab(tabName) {
-            // Убираем активный класс у всех вкладок
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            const clickedTab = event.target.closest('.nav-item') || event.target;
+            const targetContent = document.getElementById(tabName);
+            
+            // Если уже на этой вкладке, ничего не делаем
+            if (currentTab === tabName) return;
+            
+            // Убираем активный класс у всех элементов навигации и вкладок
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             
-            // Добавляем активный класс к выбранной вкладке
-            event.target.classList.add('active');
-            document.getElementById(tabName).classList.add('active');
+            // Добавляем активный класс к выбранной вкладке и элементу навигации
+            if (clickedTab) clickedTab.classList.add('active');
+            if (targetContent) targetContent.classList.add('active');
             
             currentTab = tabName;
         }
 
         function openCostModal(productName, salePrice) {
             currentOrder = { productName, salePrice };
-            document.getElementById('modal-product-name').textContent = productName;
-            document.getElementById('modal-sale-price').textContent = salePrice.toLocaleString();
-            document.getElementById('cost-input').value = '';
-            document.getElementById('costModal').style.display = 'block';
+            const modal = document.getElementById('costModal');
+            const productNameEl = document.getElementById('modal-product-name');
+            const salePriceEl = document.getElementById('modal-sale-price');
+            const costInput = document.getElementById('cost-input');
+            
+            if (productNameEl) productNameEl.textContent = productName;
+            if (salePriceEl) salePriceEl.textContent = salePrice.toLocaleString();
+            if (costInput) costInput.value = '';
+            if (modal) modal.showModal();
         }
 
         function closeCostModal() {
-            document.getElementById('costModal').style.display = 'none';
+            const modal = document.getElementById('costModal');
+            if (modal) modal.close();
         }
 
         function calculateProfit() {
@@ -1412,6 +1962,19 @@
         }
 
         function showPushNotification(message) {
+            // Удаляем существующие push-уведомления перед созданием нового
+            const existingPushNotifications = document.querySelectorAll('.push-notification');
+            existingPushNotifications.forEach(notif => {
+                if (notif.style.animation !== 'slideOutRight 0.3s ease') {
+                    notif.style.animation = 'slideOutRight 0.3s ease';
+                    setTimeout(() => {
+                        if (notif.parentNode) {
+                            notif.parentNode.removeChild(notif);
+                        }
+                    }, 300);
+                }
+            });
+
             const pushNotification = document.createElement('div');
             pushNotification.className = 'push-notification';
             pushNotification.innerHTML = `
@@ -1424,9 +1987,11 @@
             document.body.appendChild(pushNotification);
             
             setTimeout(() => {
-                pushNotification.style.animation = 'slideOutLeft 0.3s ease';
+                pushNotification.style.animation = 'slideOutRight 0.3s ease';
                 setTimeout(() => {
-                    document.body.removeChild(pushNotification);
+                    if (pushNotification.parentNode) {
+                        pushNotification.parentNode.removeChild(pushNotification);
+                    }
                 }, 300);
             }, 4000);
         }
@@ -1459,32 +2024,60 @@
             }, Math.random() * 10000 + 5000); // Случайное время от 5 до 15 секунд
         }
 
-        function showNotification(message) {
+        function showNotification(message, type = 'success') {
+            // Удаляем существующие уведомления перед созданием нового
+            const existingNotifications = document.querySelectorAll('[style*="position: fixed"][style*="top: 20px"][style*="right: 20px"]');
+            existingNotifications.forEach(notif => {
+                if (notif.style.animation !== 'slideOut 0.3s ease') {
+                    notif.style.animation = 'slideOut 0.3s ease';
+                    setTimeout(() => {
+                        if (notif.parentNode) {
+                            notif.parentNode.removeChild(notif);
+                        }
+                    }, 300);
+                }
+            });
+
+            const colors = {
+                success: 'linear-gradient(135deg, #4CAF50, #8BC34A)',
+                error: 'linear-gradient(135deg, #f44336, #e91e63)',
+                warning: 'linear-gradient(135deg, #ff9800, #ff5722)',
+                info: 'linear-gradient(135deg, #2196F3, #03A9F4)'
+            };
+
             // Создаем уведомление
             const notification = document.createElement('div');
             notification.style.cssText = `
                 position: fixed;
                 top: 20px;
                 right: 20px;
-                background: #4CAF50;
+                background: ${colors[type] || colors.success};
                 color: white;
-                padding: 15px 20px;
-                border-radius: 8px;
+                padding: 16px 24px;
+                border-radius: 12px;
                 z-index: 10000;
-                animation: slideIn 0.3s ease;
-                max-width: 300px;
+                animation: slideInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                max-width: 350px;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                font-weight: 600;
+                font-size: 14px;
+                line-height: 1.4;
             `;
             notification.textContent = message;
             
             document.body.appendChild(notification);
             
-            // Удаляем уведомление через 3 секунды
+            // Удаляем уведомление через 4 секунды
             setTimeout(() => {
-                notification.style.animation = 'slideOut 0.3s ease';
+                notification.style.animation = 'slideInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) reverse';
                 setTimeout(() => {
-                    document.body.removeChild(notification);
-                }, 300);
-            }, 3000);
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 400);
+            }, 4000);
         }
 
         // Закрытие модального окна при клике вне его
@@ -1509,8 +2102,110 @@
         `;
         document.head.appendChild(style);
 
+        // iOS-подобный скроллинг
+        function initIOSScrolling() {
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabContents.forEach(content => {
+                let startY = 0;
+                let currentY = 0;
+                let isScrolling = false;
+                let scrollVelocity = 0;
+                let lastScrollTime = 0;
+                let animationFrame = null;
+                
+                // Touch события для iOS-подобного скроллинга
+                content.addEventListener('touchstart', function(e) {
+                    startY = e.touches[0].clientY;
+                    isScrolling = true;
+                    scrollVelocity = 0;
+                    lastScrollTime = Date.now();
+                    
+                    // Останавливаем предыдущую анимацию
+                    if (animationFrame) {
+                        cancelAnimationFrame(animationFrame);
+                    }
+                }, { passive: true });
+                
+                content.addEventListener('touchmove', function(e) {
+                    if (!isScrolling) return;
+                    
+                    currentY = e.touches[0].clientY;
+                    const deltaY = startY - currentY;
+                    const currentTime = Date.now();
+                    const timeDelta = currentTime - lastScrollTime;
+                    
+                    if (timeDelta > 0) {
+                        scrollVelocity = deltaY / timeDelta;
+                    }
+                    
+                    lastScrollTime = currentTime;
+                    startY = currentY;
+                }, { passive: true });
+                
+                content.addEventListener('touchend', function(e) {
+                    if (!isScrolling) return;
+                    
+                    isScrolling = false;
+                    
+                    // Инерционный скроллинг
+                    if (Math.abs(scrollVelocity) > 0.5) {
+                        const momentum = scrollVelocity * 150;
+                        const currentScroll = content.scrollTop;
+                        const maxScroll = content.scrollHeight - content.clientHeight;
+                        const targetScroll = Math.max(0, Math.min(maxScroll, currentScroll + momentum));
+                        
+                        // Плавная анимация до целевой позиции
+                        animateScroll(content, currentScroll, targetScroll, 1000);
+                    }
+                }, { passive: true });
+                
+                // Mouse wheel события для десктопа
+                content.addEventListener('wheel', function(e) {
+                    e.preventDefault();
+                    
+                    const delta = e.deltaY;
+                    const currentScroll = content.scrollTop;
+                    const maxScroll = content.scrollHeight - content.clientHeight;
+                    
+                    // Плавный скроллинг с замедлением
+                    const newScroll = Math.max(0, Math.min(maxScroll, currentScroll + delta * 0.8));
+                    
+                    content.scrollTo({
+                        top: newScroll,
+                        behavior: 'smooth'
+                    });
+                }, { passive: false });
+            });
+        }
+        
+        // Функция анимации скроллинга с iOS-подобным easing
+        function animateScroll(element, start, end, duration) {
+            const startTime = performance.now();
+            
+            function animate(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                // iOS-подобная easing функция
+                const easeOut = 1 - Math.pow(1 - progress, 3);
+                const currentScroll = start + (end - start) * easeOut;
+                
+                element.scrollTop = currentScroll;
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+
         // Инициализация приложения
         document.addEventListener('DOMContentLoaded', function() {
+            // Инициализация iOS-подобного скроллинга
+            initIOSScrolling();
+            
             // Имитация загрузки данных с Avito API
             console.log('Приложение загружено');
             
@@ -1632,7 +2327,38 @@
                 }
             });
         }
+
+
     </script>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav" role="navigation" aria-label="Основная навигация">
+        <button type="button" class="nav-item active" onclick="switchTab('orders')" aria-label="Заказы">
+            <div class="nav-icon" aria-hidden="true">📋</div>
+            <div class="nav-label">Заказы</div>
+        </button>
+        <button type="button" class="nav-item" onclick="switchTab('profile')" aria-label="Профиль">
+            <div class="nav-icon" aria-hidden="true">👤</div>
+            <div class="nav-label">Профиль</div>
+        </button>
+        <button type="button" class="nav-item" onclick="switchTab('inventory')" aria-label="Склад">
+            <div class="nav-icon" aria-hidden="true">📦</div>
+            <div class="nav-label">Склад</div>
+        </button>
+        <button type="button" class="nav-item" onclick="switchTab('chat')" aria-label="Чат">
+            <div class="nav-icon" aria-hidden="true">💬</div>
+            <div class="nav-label">Чат</div>
+        </button>
+        <button type="button" class="nav-item" onclick="switchTab('delivery')" aria-label="Доставка">
+            <div class="nav-icon" aria-hidden="true">🚚</div>
+            <div class="nav-label">Доставка</div>
+        </button>
+        <button type="button" class="nav-item" onclick="switchTab('reviews')" aria-label="Отзывы">
+            <div class="nav-icon" aria-hidden="true">⭐</div>
+            <div class="nav-label">Отзывы</div>
+        </button>
+    </nav>
 </body>
 </html> 
+
 
