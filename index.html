@@ -240,6 +240,7 @@
             -webkit-transform: translateZ(0);
             transform: translateZ(0);
             will-change: scroll-position;
+            scroll-behavior: auto;
         }
 
         .tab-content.active {
@@ -282,6 +283,8 @@
             -webkit-transform: translateZ(0);
             transform: translateZ(0);
             will-change: transform;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
         }
 
         /* Оптимизация для лучшей отзывчивости */
@@ -289,6 +292,13 @@
             -webkit-transform: translateZ(0);
             transform: translateZ(0);
             will-change: scroll-position;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+        }
+
+        /* iOS-подобные анимации */
+        .card, .stat-card, .order-item {
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
 
         /* Исправление отображения вкладок */
@@ -318,11 +328,22 @@
             user-select: none;
         }
 
-        /* Улучшение отзывчивости скроллинга */
+        /* iOS-подобный скроллинг */
         .tab-content {
             touch-action: pan-y;
             -webkit-overflow-scrolling: touch;
             overscroll-behavior: auto;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Улучшение производительности для iOS */
+        .tab-content * {
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
         }
 
         /* Оптимизация для лучшей производительности */
@@ -449,9 +470,17 @@
         }
 
         .card:hover {
-            transform: translate3d(0, -4px, 0);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+            transform: translate3d(0, -2px, 0);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
             border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* iOS-подобные hover эффекты */
+        @media (hover: hover) {
+            .card:hover {
+                transform: translate3d(0, -2px, 0);
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            }
         }
 
         .order-item {
@@ -524,8 +553,16 @@
 
         .btn:hover {
             background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
-            transform: translate3d(0, -2px, 0);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            transform: translate3d(0, -1px, 0);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        /* iOS-подобные hover эффекты для кнопок */
+        @media (hover: hover) {
+            .btn:hover {
+                transform: translate3d(0, -1px, 0);
+                box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            }
         }
 
         .btn:hover::before {
@@ -783,9 +820,17 @@
         }
 
         .stat-card:hover {
-            transform: translate3d(0, -2px, 0);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+            transform: translate3d(0, -1px, 0);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
             border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* iOS-подобные hover эффекты для статистических карточек */
+        @media (hover: hover) {
+            .stat-card:hover {
+                transform: translate3d(0, -1px, 0);
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            }
         }
 
         .stat-number {
@@ -2269,7 +2314,7 @@
         `;
         document.head.appendChild(style);
 
-        // Улучшенный нативный скроллинг для мобильных устройств
+        // iOS-подобный скроллинг для мобильных устройств
         function initSmoothScrolling() {
             const tabContents = document.querySelectorAll('.tab-content');
             
@@ -2281,8 +2326,9 @@
                 let lastTime = 0;
                 let lastY = 0;
                 let animationId = null;
+                let scrollOffset = 0;
                 
-                // Touch события для плавного скроллинга
+                // Touch события для iOS-подобного скроллинга
                 content.addEventListener('touchstart', function(e) {
                     startY = e.touches[0].clientY;
                     startScrollTop = content.scrollTop;
@@ -2290,6 +2336,7 @@
                     lastTime = Date.now();
                     isScrolling = true;
                     velocities = [];
+                    scrollOffset = 0;
                     
                     // Останавливаем предыдущую анимацию
                     if (animationId) {
@@ -2310,26 +2357,29 @@
                         velocities.push(velocity);
                         
                         // Ограничиваем массив скоростей
-                        if (velocities.length > 3) {
+                        if (velocities.length > 5) {
                             velocities.shift();
                         }
                     }
                     
-                    // Прямое управление скроллом
+                    // iOS-подобное управление скроллом
                     const newScrollTop = content.scrollTop - deltaY;
                     const maxScroll = content.scrollHeight - content.clientHeight;
                     
                     if (newScrollTop < 0) {
-                        // Мягкий отскок при достижении верха
-                        content.scrollTop = newScrollTop * 0.1;
+                        // iOS-подобный отскок при достижении верха
+                        scrollOffset = newScrollTop * 0.3;
+                        content.scrollTop = scrollOffset;
                         e.preventDefault();
                     } else if (newScrollTop > maxScroll) {
-                        // Мягкий отскок при достижении низа
+                        // iOS-подобный отскок при достижении низа
                         const overscroll = newScrollTop - maxScroll;
-                        content.scrollTop = maxScroll + overscroll * 0.1;
+                        scrollOffset = overscroll * 0.3;
+                        content.scrollTop = maxScroll + scrollOffset;
                         e.preventDefault();
                     } else {
                         content.scrollTop = newScrollTop;
+                        scrollOffset = 0;
                     }
                     
                     lastY = currentY;
@@ -2345,21 +2395,28 @@
                     const avgVelocity = velocities.length > 0 ? 
                         velocities.reduce((a, b) => a + b, 0) / velocities.length : 0;
                     
-                    // Применяем инерцию только при достаточной скорости
-                    if (Math.abs(avgVelocity) > 0.5) {
-                        const momentum = avgVelocity * 100;
+                    // iOS-подобная инерция
+                    if (Math.abs(avgVelocity) > 0.3) {
+                        const momentum = avgVelocity * 250;
                         const currentScroll = content.scrollTop;
                         const maxScroll = content.scrollHeight - content.clientHeight;
                         const targetScroll = Math.max(0, Math.min(maxScroll, currentScroll - momentum));
                         
                         // Плавная анимация до целевой позиции
-                        animateScrollTo(content, currentScroll, targetScroll, 400);
+                        animateScrollTo(content, currentScroll, targetScroll, 800);
+                    } else if (scrollOffset !== 0) {
+                        // Возврат к границам при отскоке
+                        const currentScroll = content.scrollTop;
+                        const maxScroll = content.scrollHeight - content.clientHeight;
+                        const targetScroll = scrollOffset < 0 ? 0 : maxScroll;
+                        
+                        animateScrollTo(content, currentScroll, targetScroll, 300);
                     }
                 }, { passive: true });
             });
         }
         
-        // Функция плавной анимации скролла
+        // iOS-подобная функция анимации скролла
         function animateScrollTo(element, start, end, duration) {
             const startTime = performance.now();
             
@@ -2367,9 +2424,9 @@
                 const elapsed = currentTime - startTime;
                 const progress = Math.min(elapsed / duration, 1);
                 
-                // Плавная easing функция
-                const easeOutCubic = 1 - Math.pow(1 - progress, 3);
-                const currentScroll = start + (end - start) * easeOutCubic;
+                // iOS-подобная easing функция
+                const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+                const currentScroll = start + (end - start) * easeOutQuart;
                 
                 element.scrollTop = currentScroll;
                 
@@ -2574,7 +2631,7 @@
     </nav>
 </body>
 </html> 
-</html> 
+
 
 
 
