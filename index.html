@@ -2,11 +2,16 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="description" content="Avito Manager - управление заказами и товарами">
     <meta name="keywords" content="avito, manager, заказы, товары, управление">
     <meta name="author" content="Avito Manager">
     <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Avito Manager">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
     <title>Avito Manager</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     <style>
@@ -20,35 +25,57 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            overflow-x: hidden;
-            position: relative;
+            height: 100vh;
+            overflow: hidden;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             color: #333;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-overflow-scrolling: touch;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+            padding-left: env(safe-area-inset-left);
+            padding-right: env(safe-area-inset-right);
         }
 
         .container {
-            max-width: 400px;
-            margin: 0 auto;
+            width: 100%;
+            height: 100vh;
+            max-width: 100%;
+            margin: 0;
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            min-height: 100vh;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: none;
+            border: none;
             position: relative;
-            overflow-x: hidden;
-            padding-bottom: 100px;
+            overflow: hidden;
+            padding-bottom: 120px;
+            display: flex;
+            flex-direction: column;
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+            will-change: transform;
         }
 
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 25px 20px;
+            padding: 20px;
             text-align: center;
-            position: sticky;
-            top: 0;
+            position: relative;
             z-index: 100;
             box-shadow: 0 2px 20px rgba(102, 126, 234, 0.3);
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
         }
 
         .header h1 {
@@ -71,10 +98,8 @@
         .bottom-nav {
             position: fixed;
             bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
+            left: 0;
             width: 100%;
-            max-width: 400px;
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
@@ -82,9 +107,11 @@
             display: flex;
             justify-content: space-around;
             padding: 16px 0;
+            padding-bottom: calc(16px + env(safe-area-inset-bottom));
             z-index: 9999;
             box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.1);
             border-radius: 20px 20px 0 0;
+            flex-shrink: 0;
         }
 
         .nav-item {
@@ -96,12 +123,17 @@
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             border-radius: 12px;
             min-width: 60px;
+            min-height: 44px;
             background: none;
             border: none;
             color: inherit;
             font: inherit;
             position: relative;
             overflow: hidden;
+            -webkit-appearance: none;
+            appearance: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
 
         .nav-item::before {
@@ -138,6 +170,9 @@
             font-size: 20px;
             margin-bottom: 4px;
             transition: transform 0.3s ease;
+            -webkit-user-select: none;
+            user-select: none;
+            pointer-events: none;
         }
 
         .nav-label {
@@ -176,7 +211,8 @@
         .tab-container {
             position: relative;
             overflow: hidden;
-            height: calc(100vh - 120px);
+            flex: 1;
+            height: 0;
         }
 
         .tab-content {
@@ -184,7 +220,7 @@
             top: 0;
             left: 0;
             width: 100%;
-            height: calc(100vh - 120px);
+            height: 100%;
             padding: 20px;
             padding-bottom: 120px;
             transition: opacity 0.3s ease-in-out;
@@ -195,8 +231,10 @@
             scroll-behavior: smooth;
             -webkit-overflow-scrolling: touch;
             scroll-snap-type: y proximity;
-            overscroll-behavior: auto;
-            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+            will-change: scroll-position;
         }
 
         .tab-content.active {
@@ -245,6 +283,30 @@
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Оптимизация для мобильных устройств */
+        * {
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        /* Разрешаем выделение текста в полях ввода */
+        input, textarea {
+            -webkit-user-select: text;
+            user-select: text;
+        }
+
+        /* Поддержка iPhone X и новее */
+        @supports (padding: max(0px)) {
+            body {
+                padding-top: max(env(safe-area-inset-top), 0px);
+                padding-bottom: max(env(safe-area-inset-bottom), 0px);
+                padding-left: max(env(safe-area-inset-left), 0px);
+                padding-right: max(env(safe-area-inset-right), 0px);
+            }
         }
 
         @keyframes slideInUp {
@@ -350,6 +412,11 @@
             position: relative;
             overflow: hidden;
             box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            -webkit-appearance: none;
+            appearance: none;
+            -webkit-tap-highlight-color: transparent;
+            min-height: 44px;
+            touch-action: manipulation;
         }
 
         .btn::before {
@@ -453,6 +520,9 @@
             border-radius: 8px;
             font-size: 16px;
             transition: border-color 0.3s ease;
+            -webkit-appearance: none;
+            appearance: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .input-group input:focus {
@@ -549,6 +619,8 @@
             width: 100%;
             height: 100%;
             background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             z-index: 1000;
             animation: fadeIn 0.3s ease;
             border: none;
@@ -565,14 +637,17 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: white;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             padding: 30px;
-            border-radius: 12px;
+            border-radius: 16px;
             width: 90%;
             max-width: 350px;
             max-height: 90vh;
             overflow-y: auto;
             box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .close {
@@ -2102,80 +2177,45 @@
         `;
         document.head.appendChild(style);
 
-        // iOS-подобный скроллинг
-        function initIOSScrolling() {
+        // Оптимизированный скроллинг для мобильных устройств
+        function initMobileScrolling() {
             const tabContents = document.querySelectorAll('.tab-content');
             
             tabContents.forEach(content => {
                 let startY = 0;
-                let currentY = 0;
+                let startScrollTop = 0;
                 let isScrolling = false;
-                let scrollVelocity = 0;
-                let lastScrollTime = 0;
-                let animationFrame = null;
                 
-                // Touch события для iOS-подобного скроллинга
+                // Touch события для мобильного скроллинга
                 content.addEventListener('touchstart', function(e) {
                     startY = e.touches[0].clientY;
+                    startScrollTop = content.scrollTop;
                     isScrolling = true;
-                    scrollVelocity = 0;
-                    lastScrollTime = Date.now();
-                    
-                    // Останавливаем предыдущую анимацию
-                    if (animationFrame) {
-                        cancelAnimationFrame(animationFrame);
-                    }
                 }, { passive: true });
                 
                 content.addEventListener('touchmove', function(e) {
                     if (!isScrolling) return;
                     
-                    currentY = e.touches[0].clientY;
-                    const deltaY = startY - currentY;
-                    const currentTime = Date.now();
-                    const timeDelta = currentTime - lastScrollTime;
+                    const deltaY = e.touches[0].clientY - startY;
+                    const newScrollTop = startScrollTop - deltaY;
                     
-                    if (timeDelta > 0) {
-                        scrollVelocity = deltaY / timeDelta;
-                    }
-                    
-                    lastScrollTime = currentTime;
-                    startY = currentY;
-                }, { passive: true });
-                
-                content.addEventListener('touchend', function(e) {
-                    if (!isScrolling) return;
-                    
-                    isScrolling = false;
-                    
-                    // Инерционный скроллинг
-                    if (Math.abs(scrollVelocity) > 0.5) {
-                        const momentum = scrollVelocity * 150;
-                        const currentScroll = content.scrollTop;
-                        const maxScroll = content.scrollHeight - content.clientHeight;
-                        const targetScroll = Math.max(0, Math.min(maxScroll, currentScroll + momentum));
-                        
-                        // Плавная анимация до целевой позиции
-                        animateScroll(content, currentScroll, targetScroll, 1000);
-                    }
-                }, { passive: true });
-                
-                // Mouse wheel события для десктопа
-                content.addEventListener('wheel', function(e) {
-                    e.preventDefault();
-                    
-                    const delta = e.deltaY;
-                    const currentScroll = content.scrollTop;
+                    // Проверяем границы скролла
                     const maxScroll = content.scrollHeight - content.clientHeight;
                     
-                    // Плавный скроллинг с замедлением
-                    const newScroll = Math.max(0, Math.min(maxScroll, currentScroll + delta * 0.8));
-                    
-                    content.scrollTo({
-                        top: newScroll,
-                        behavior: 'smooth'
-                    });
+                    if (newScrollTop < 0) {
+                        content.scrollTop = 0;
+                        e.preventDefault();
+                    } else if (newScrollTop > maxScroll) {
+                        content.scrollTop = maxScroll;
+                        e.preventDefault();
+                    } else {
+                        content.scrollTop = newScrollTop;
+                    }
                 }, { passive: false });
+                
+                content.addEventListener('touchend', function(e) {
+                    isScrolling = false;
+                }, { passive: true });
             });
         }
         
@@ -2203,8 +2243,8 @@
 
         // Инициализация приложения
         document.addEventListener('DOMContentLoaded', function() {
-            // Инициализация iOS-подобного скроллинга
-            initIOSScrolling();
+            // Инициализация мобильного скроллинга
+            initMobileScrolling();
             
             // Имитация загрузки данных с Avito API
             console.log('Приложение загружено');
