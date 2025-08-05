@@ -1,0 +1,1637 @@
+!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avito Manager</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .tab-bar {
+            display: flex;
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+            position: sticky;
+            top: 80px;
+            z-index: 99;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+            font-weight: 500;
+            color: #666;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .order-item {
+            border-left: 4px solid #667eea;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .order-item.completed {
+            border-left-color: #4CAF50;
+            opacity: 0.7;
+        }
+
+        .order-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .order-price {
+            color: #667eea;
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .order-date {
+            color: #999;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .profit-card {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #333;
+            text-align: center;
+            padding: 30px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .profit-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(69, 160, 73, 0.1) 100%);
+            pointer-events: none;
+        }
+
+        .profit-card .profit-amount,
+        .profit-card .profit-label {
+            position: relative;
+            z-index: 1;
+        }
+
+        .profit-amount {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .profit-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .inventory-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .inventory-info {
+            flex: 1;
+        }
+
+        .inventory-title {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .inventory-price {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .inventory-stock {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .stock-input {
+            width: 60px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 350px;
+        }
+
+        .close {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .sync-status {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .sync-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #4CAF50;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .ai-assistant-btn {
+            background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #f5576c);
+            background-size: 400% 400%;
+            animation: gradientShift 3s ease infinite;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ai-assistant-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .ai-assistant-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .ai-assistant-btn:hover::before {
+            left: 100%;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .auto-reply-settings {
+            margin-bottom: 20px;
+        }
+
+        .auto-reply-item {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .auto-reply-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .auto-reply-title {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .auto-reply-toggle {
+            position: relative;
+            width: 50px;
+            height: 24px;
+            background: #ccc;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .auto-reply-toggle.active {
+            background: #4CAF50;
+        }
+
+        .auto-reply-toggle::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+
+        .auto-reply-toggle.active::after {
+            transform: translateX(26px);
+        }
+
+        .auto-reply-textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .auto-reply-textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .chat-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .chat-stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .chat-stat-number {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .chat-stat-label {
+            color: #666;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .delivery-item {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #ff6b35;
+            position: relative;
+        }
+
+        .delivery-status {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .delivery-status.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .delivery-status.in-transit {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .delivery-status.delivered {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .reminder-toggle {
+            position: relative;
+            width: 50px;
+            height: 24px;
+            background: #ccc;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .reminder-toggle.active {
+            background: #4CAF50;
+        }
+
+        .reminder-toggle::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+
+        .reminder-toggle.active::after {
+            transform: translateX(26px);
+        }
+
+        .review-item {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-left: 4px solid #ffc107;
+        }
+
+        .review-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .review-author {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .review-date {
+            color: #999;
+            font-size: 12px;
+        }
+
+        .review-rating {
+            display: flex;
+            gap: 2px;
+            margin-bottom: 10px;
+        }
+
+        .star {
+            color: #ffc107;
+            font-size: 16px;
+        }
+
+        .star.empty {
+            color: #ddd;
+        }
+
+        .review-text {
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .notification-settings {
+            margin-bottom: 20px;
+        }
+
+        .notification-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .notification-info {
+            flex: 1;
+        }
+
+        .notification-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .notification-desc {
+            color: #666;
+            font-size: 12px;
+        }
+
+        .widget-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .widget-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .widget-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .widget-icon {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .widget-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .widget-desc {
+            color: #666;
+            font-size: 12px;
+        }
+
+        .dashboard-customization {
+            margin-bottom: 20px;
+        }
+
+        .customization-item {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+
+        .customization-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .customization-title {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .color-picker {
+            width: 30px;
+            height: 30px;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .stock-alert {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stock-alert-icon {
+            font-size: 20px;
+        }
+
+        .push-notification {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: #4CAF50;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            z-index: 10001;
+            animation: slideInLeft 0.3s ease;
+            max-width: 300px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+
+        @keyframes slideInLeft {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes slideOutLeft {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(-100%); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Avito Manager</h1>
+        </div>
+
+        <div class="tab-bar">
+            <div class="tab active" onclick="switchTab('orders')">Заказы</div>
+            <div class="tab" onclick="switchTab('profile')">Профиль</div>
+            <div class="tab" onclick="switchTab('inventory')">Склад</div>
+            <div class="tab" onclick="switchTab('chat')">Чат</div>
+            <div class="tab" onclick="switchTab('delivery')">Доставка</div>
+            <div class="tab" onclick="switchTab('reviews')">Отзывы</div>
+        </div>
+
+        <!-- Заказы -->
+        <div id="orders" class="tab-content active">
+            <div class="card">
+                <h3>Актуальные заказы</h3>
+                <div id="active-orders">
+                    <div class="order-item">
+                        <div class="order-title">iPhone 14 Pro 128GB</div>
+                        <div class="order-price">85,000 ₽</div>
+                        <div class="order-date">Сегодня, 14:30</div>
+                        <button class="btn" onclick="openCostModal('iPhone 14 Pro 128GB', 85000)">Ввести себестоимость</button>
+                    </div>
+                    <div class="order-item">
+                        <div class="order-title">MacBook Air M2</div>
+                        <div class="order-price">120,000 ₽</div>
+                        <div class="order-date">Вчера, 16:45</div>
+                        <button class="btn" onclick="openCostModal('MacBook Air M2', 120000)">Ввести себестоимость</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Завершенные заказы</h3>
+                <div id="completed-orders">
+                    <div class="order-item completed">
+                        <div class="order-title">AirPods Pro 2</div>
+                        <div class="order-price">25,000 ₽</div>
+                        <div class="order-date">2 дня назад</div>
+                        <div style="color: #4CAF50; font-weight: 600;">Прибыль: 8,500 ₽</div>
+                    </div>
+                    <div class="order-item completed">
+                        <div class="order-title">iPad Air 5</div>
+                        <div class="order-price">65,000 ₽</div>
+                        <div class="order-date">3 дня назад</div>
+                        <div style="color: #4CAF50; font-weight: 600;">Прибыль: 12,000 ₽</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Профиль -->
+        <div id="profile" class="tab-content">
+            <div class="profit-card">
+                <div class="profit-amount">45,500 ₽</div>
+                <div class="profit-label">Прибыль за месяц</div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">12</div>
+                    <div class="stat-label">Заказов</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">8</div>
+                    <div class="stat-label">Завершено</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">4</div>
+                    <div class="stat-label">В работе</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">85%</div>
+                    <div class="stat-label">Успешность</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>График прибыли</h3>
+                <div style="position: relative; height: 250px;">
+                    <canvas id="profitChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Настройки дашборда</h3>
+                <div class="dashboard-customization">
+                    <div class="customization-item">
+                        <div class="customization-header">
+                            <div class="customization-title">Цветовая схема</div>
+                            <input type="color" class="color-picker" value="#667eea" onchange="changeThemeColor(this.value)">
+                        </div>
+                        <div style="color: #666; font-size: 12px;">Выберите основной цвет интерфейса</div>
+                    </div>
+                    
+                    <div class="customization-item">
+                        <div class="customization-header">
+                            <div class="customization-title">Уведомления</div>
+                            <div class="reminder-toggle active" onclick="toggleReminder(this)"></div>
+                        </div>
+                        <div style="color: #666; font-size: 12px;">Получать push-уведомления о важных событиях</div>
+                    </div>
+                    
+                    <div class="customization-item">
+                        <div class="customization-header">
+                            <div class="customization-title">Автообновление</div>
+                            <div class="reminder-toggle active" onclick="toggleReminder(this)"></div>
+                        </div>
+                        <div style="color: #666; font-size: 12px;">Автоматически обновлять данные каждые 5 минут</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Подключение к Avito</h3>
+                <div style="text-align: center; padding: 20px;">
+                    <div style="margin-bottom: 15px; color: #666;">
+                        Подключите свой аккаунт Avito для автоматической синхронизации заказов и товаров
+                    </div>
+                    <button class="btn" onclick="connectAvito()" style="background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);">
+                        <span style="margin-right: 8px;">🔗</span>
+                        Подключить Avito
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Склад -->
+        <div id="inventory" class="tab-content">
+            <div class="stock-alert" id="stockAlert" style="display: none;">
+                <div class="stock-alert-icon">⚠️</div>
+                <div>
+                    <div style="font-weight: 600; margin-bottom: 5px;">Низкий остаток товаров!</div>
+                    <div style="font-size: 12px; opacity: 0.9;">AirPods Pro 2 - осталось 1 шт.</div>
+                </div>
+            </div>
+
+            <div class="sync-status">
+                <div>
+                    <div style="font-weight: 600; margin-bottom: 5px;">Синхронизация с Avito</div>
+                    <div style="font-size: 12px; color: #666;">Последняя синхронизация: 2 минуты назад</div>
+                </div>
+                <div class="sync-indicator"></div>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3>Товары на складе</h3>
+                    <button class="btn" onclick="exportToExcel()">Экспорт в Excel</button>
+                </div>
+                
+                <div id="inventory-list">
+                    <div class="inventory-item">
+                        <div class="inventory-info">
+                            <div class="inventory-title">iPhone 14 Pro 128GB</div>
+                            <div class="inventory-price">85,000 ₽</div>
+                            <div class="inventory-stock">В наличии: <input type="number" class="stock-input" value="3" min="0"></div>
+                        </div>
+                        <button class="btn btn-secondary" onclick="updateStock(this)">Обновить</button>
+                    </div>
+
+                    <div class="inventory-item">
+                        <div class="inventory-info">
+                            <div class="inventory-title">MacBook Air M2 256GB</div>
+                            <div class="inventory-price">120,000 ₽</div>
+                            <div class="inventory-stock">В наличии: <input type="number" class="stock-input" value="2" min="0"></div>
+                        </div>
+                        <button class="btn btn-secondary" onclick="updateStock(this)">Обновить</button>
+                    </div>
+
+                    <div class="inventory-item">
+                        <div class="inventory-info">
+                            <div class="inventory-title">AirPods Pro 2</div>
+                            <div class="inventory-price">25,000 ₽</div>
+                            <div class="inventory-stock">В наличии: <input type="number" class="stock-input" value="8" min="0"></div>
+                        </div>
+                        <button class="btn btn-secondary" onclick="updateStock(this)">Обновить</button>
+                    </div>
+
+                    <div class="inventory-item">
+                        <div class="inventory-info">
+                            <div class="inventory-title">iPad Air 5 64GB</div>
+                            <div class="inventory-price">65,000 ₽</div>
+                            <div class="inventory-stock">В наличии: <input type="number" class="stock-input" value="5" min="0"></div>
+                        </div>
+                        <button class="btn btn-secondary" onclick="updateStock(this)">Обновить</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Чат -->
+        <div id="chat" class="tab-content">
+            <div class="chat-stats">
+                <div class="chat-stat-card">
+                    <div class="chat-stat-number">24</div>
+                    <div class="chat-stat-label">Сообщений сегодня</div>
+                </div>
+                <div class="chat-stat-card">
+                    <div class="chat-stat-number">8</div>
+                    <div class="chat-stat-label">Автоответов</div>
+                </div>
+                <div class="chat-stat-card">
+                    <div class="chat-stat-number">95%</div>
+                    <div class="chat-stat-label">Время ответа</div>
+                </div>
+                <div class="chat-stat-card">
+                    <div class="chat-stat-number">12</div>
+                    <div class="chat-stat-label">Активных чатов</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3>ИИ-ассистент</h3>
+                    <span style="color: #ff6b35; font-size: 12px; font-weight: 600;">В разработке</span>
+                </div>
+                <div style="text-align: center; padding: 20px;">
+                    <div style="margin-bottom: 20px; color: #666;">
+                        Умный помощник для автоматических ответов на основе ИИ
+                    </div>
+                    <button class="ai-assistant-btn" onclick="openAIAssistant()">
+                        🤖 ИИ-ассистент
+                    </button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Настройки автоответов</h3>
+                <div class="auto-reply-settings">
+                    <div class="auto-reply-item">
+                        <div class="auto-reply-header">
+                            <div class="auto-reply-title">Приветствие</div>
+                            <div class="auto-reply-toggle active" onclick="toggleAutoReply(this)"></div>
+                        </div>
+                        <textarea class="auto-reply-textarea" placeholder="Введите текст автоответа для приветствия...">Здравствуйте! Спасибо за интерес к нашему товару. Чем могу помочь?</textarea>
+                    </div>
+
+                    <div class="auto-reply-item">
+                        <div class="auto-reply-header">
+                            <div class="auto-reply-title">Информация о доставке</div>
+                            <div class="auto-reply-toggle" onclick="toggleAutoReply(this)"></div>
+                        </div>
+                        <textarea class="auto-reply-textarea" placeholder="Введите текст автоответа о доставке...">Доставка осуществляется по Москве в течение 1-2 дней. Стоимость доставки 500₽.</textarea>
+                    </div>
+
+                    <div class="auto-reply-item">
+                        <div class="auto-reply-header">
+                            <div class="auto-reply-title">Оплата</div>
+                            <div class="auto-reply-toggle active" onclick="toggleAutoReply(this)"></div>
+                        </div>
+                        <textarea class="auto-reply-textarea" placeholder="Введите текст автоответа об оплате...">Принимаем оплату наличными при получении или переводом на карту. Предоплата не требуется.</textarea>
+                    </div>
+
+                    <div class="auto-reply-item">
+                        <div class="auto-reply-header">
+                            <div class="auto-reply-title">Гарантия</div>
+                            <div class="auto-reply-toggle" onclick="toggleAutoReply(this)"></div>
+                        </div>
+                        <textarea class="auto-reply-textarea" placeholder="Введите текст автоответа о гарантии...">На все товары предоставляется гарантия 14 дней. При наличии дефектов товар можно вернуть.</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Последние сообщения</h3>
+                <div style="max-height: 300px; overflow-y: auto;">
+                    <div style="padding: 15px; border-bottom: 1px solid #f0f0f0;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span style="font-weight: 600; color: #333;">Клиент #1</span>
+                            <span style="color: #999; font-size: 12px;">14:30</span>
+                        </div>
+                        <div style="color: #666; font-size: 14px;">Здравствуйте, товар еще в наличии?</div>
+                        <div style="color: #4CAF50; font-size: 12px; margin-top: 5px;">✓ Автоответ отправлен</div>
+                    </div>
+                    
+                    <div style="padding: 15px; border-bottom: 1px solid #f0f0f0;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span style="font-weight: 600; color: #333;">Клиент #2</span>
+                            <span style="color: #999; font-size: 12px;">13:45</span>
+                        </div>
+                        <div style="color: #666; font-size: 14px;">Можете доставить сегодня?</div>
+                        <div style="color: #4CAF50; font-size: 12px; margin-top: 5px;">✓ Автоответ отправлен</div>
+                    </div>
+                    
+                    <div style="padding: 15px; border-bottom: 1px solid #f0f0f0;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span style="font-weight: 600; color: #333;">Клиент #3</span>
+                            <span style="color: #999; font-size: 12px;">12:20</span>
+                        </div>
+                        <div style="color: #666; font-size: 14px;">Есть ли гарантия на товар?</div>
+                        <div style="color: #4CAF50; font-size: 12px; margin-top: 5px;">✓ Автоответ отправлен</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Доставка -->
+        <div id="delivery" class="tab-content">
+            <div class="card">
+                <h3>Настройки напоминаний</h3>
+                <div class="notification-settings">
+                    <div class="notification-item">
+                        <div class="notification-info">
+                            <div class="notification-title">Автоматические напоминания</div>
+                            <div class="notification-desc">Отправлять клиентам уведомления о доставке</div>
+                        </div>
+                        <div class="reminder-toggle active" onclick="toggleReminder(this)"></div>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-info">
+                            <div class="notification-title">Push-уведомления</div>
+                            <div class="notification-desc">Получать уведомления о новых заказах</div>
+                        </div>
+                        <div class="reminder-toggle active" onclick="toggleReminder(this)"></div>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-info">
+                            <div class="notification-title">Низкий остаток товаров</div>
+                            <div class="notification-desc">Уведомления при остатке менее 3 шт.</div>
+                        </div>
+                        <div class="reminder-toggle active" onclick="toggleReminder(this)"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Активные доставки</h3>
+                <div class="delivery-item">
+                    <div class="delivery-status in-transit">В пути</div>
+                    <div style="font-weight: 600; margin-bottom: 5px;">iPhone 14 Pro 128GB</div>
+                    <div style="color: #666; margin-bottom: 5px;">Клиент: Иван Петров</div>
+                    <div style="color: #666; margin-bottom: 10px;">Адрес: ул. Тверская, 15, кв. 45</div>
+                    <div style="color: #ff6b35; font-weight: 600;">Ожидаемое время: 16:30</div>
+                    <button class="btn" onclick="sendDeliveryReminder('iPhone 14 Pro')" style="margin-top: 10px; background: #ff6b35;">
+                        📱 Отправить напоминание
+                    </button>
+                </div>
+
+                <div class="delivery-item">
+                    <div class="delivery-status pending">Ожидает</div>
+                    <div style="font-weight: 600; margin-bottom: 5px;">MacBook Air M2</div>
+                    <div style="color: #666; margin-bottom: 5px;">Клиент: Анна Сидорова</div>
+                    <div style="color: #666; margin-bottom: 10px;">Адрес: Ленинский пр-т, 78, кв. 12</div>
+                    <div style="color: #ff6b35; font-weight: 600;">Запланировано: Завтра, 14:00</div>
+                    <button class="btn" onclick="sendDeliveryReminder('MacBook Air M2')" style="margin-top: 10px; background: #ff6b35;">
+                        📱 Отправить напоминание
+                    </button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Быстрые действия</h3>
+                <div class="widget-grid">
+                    <div class="widget-card" onclick="quickAction('new-delivery')">
+                        <div class="widget-icon">🚚</div>
+                        <div class="widget-title">Новая доставка</div>
+                        <div class="widget-desc">Создать маршрут</div>
+                    </div>
+                    <div class="widget-card" onclick="quickAction('track-delivery')">
+                        <div class="widget-icon">📍</div>
+                        <div class="widget-title">Отследить</div>
+                        <div class="widget-desc">Статус доставки</div>
+                    </div>
+                    <div class="widget-card" onclick="quickAction('schedule')">
+                        <div class="widget-icon">📅</div>
+                        <div class="widget-title">Расписание</div>
+                        <div class="widget-desc">Планирование</div>
+                    </div>
+                    <div class="widget-card" onclick="quickAction('reports')">
+                        <div class="widget-icon">📊</div>
+                        <div class="widget-title">Отчеты</div>
+                        <div class="widget-desc">Статистика</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Отзывы -->
+        <div id="reviews" class="tab-content">
+            <div class="card">
+                <h3>Синхронизация отзывов</h3>
+                <div style="text-align: center; padding: 20px;">
+                    <div style="margin-bottom: 15px; color: #666;">
+                        Автоматическая синхронизация отзывов с вашего профиля Avito
+                    </div>
+                    <button class="btn" onclick="syncReviews()" style="background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);">
+                        <span style="margin-right: 8px;">🔄</span>
+                        Синхронизировать отзывы
+                    </button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Последние отзывы</h3>
+                <div class="review-item">
+                    <div class="review-header">
+                        <div class="review-author">Михаил К.</div>
+                        <div class="review-date">Сегодня, 15:30</div>
+                    </div>
+                    <div class="review-rating">
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                    </div>
+                    <div class="review-text">
+                        Отличный продавец! Товар в идеальном состоянии, доставка быстрая. Рекомендую!
+                    </div>
+                </div>
+
+                <div class="review-item">
+                    <div class="review-header">
+                        <div class="review-author">Елена В.</div>
+                        <div class="review-date">Вчера, 18:45</div>
+                    </div>
+                    <div class="review-rating">
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star empty">★</span>
+                    </div>
+                    <div class="review-text">
+                        Хороший товар, но доставка немного задержалась. В целом довольна покупкой.
+                    </div>
+                </div>
+
+                <div class="review-item">
+                    <div class="review-header">
+                        <div class="review-author">Алексей П.</div>
+                        <div class="review-date">2 дня назад</div>
+                    </div>
+                    <div class="review-rating">
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                    </div>
+                    <div class="review-text">
+                        Супер! Все как в описании, цена адекватная. Буду обращаться еще.
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Статистика отзывов</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">4.8</div>
+                        <div class="stat-label">Средний рейтинг</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">156</div>
+                        <div class="stat-label">Всего отзывов</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">142</div>
+                        <div class="stat-label">Положительных</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">14</div>
+                        <div class="stat-label">Нейтральных</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для ввода себестоимости -->
+    <div id="costModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeCostModal()">&times;</span>
+            <h3>Введите себестоимость</h3>
+            <div class="input-group">
+                <label>Товар: <span id="modal-product-name"></span></label>
+            </div>
+            <div class="input-group">
+                <label>Цена продажи: <span id="modal-sale-price"></span> ₽</label>
+            </div>
+            <div class="input-group">
+                <label for="cost-input">Себестоимость (₽):</label>
+                <input type="number" id="cost-input" placeholder="Введите себестоимость">
+            </div>
+            <button class="btn" onclick="calculateProfit()">Рассчитать прибыль</button>
+        </div>
+    </div>
+
+    <script>
+        let currentTab = 'orders';
+        let currentOrder = null;
+
+        function switchTab(tabName) {
+            // Убираем активный класс у всех вкладок
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // Добавляем активный класс к выбранной вкладке
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+            
+            currentTab = tabName;
+        }
+
+        function openCostModal(productName, salePrice) {
+            currentOrder = { productName, salePrice };
+            document.getElementById('modal-product-name').textContent = productName;
+            document.getElementById('modal-sale-price').textContent = salePrice.toLocaleString();
+            document.getElementById('cost-input').value = '';
+            document.getElementById('costModal').style.display = 'block';
+        }
+
+        function closeCostModal() {
+            document.getElementById('costModal').style.display = 'none';
+        }
+
+        function calculateProfit() {
+            const cost = parseFloat(document.getElementById('cost-input').value);
+            if (!cost || cost < 0) {
+                alert('Пожалуйста, введите корректную себестоимость');
+                return;
+            }
+
+            const profit = currentOrder.salePrice - cost;
+            
+            // Перемещаем заказ в завершенные
+            const activeOrders = document.getElementById('active-orders');
+            const completedOrders = document.getElementById('completed-orders');
+            
+            // Создаем новый элемент завершенного заказа
+            const completedOrder = document.createElement('div');
+            completedOrder.className = 'order-item completed';
+            completedOrder.innerHTML = `
+                <div class="order-title">${currentOrder.productName}</div>
+                <div class="order-price">${currentOrder.salePrice.toLocaleString()} ₽</div>
+                <div class="order-date">Сегодня</div>
+                <div style="color: #4CAF50; font-weight: 600;">Прибыль: ${profit.toLocaleString()} ₽</div>
+            `;
+            
+            completedOrders.insertBefore(completedOrder, completedOrders.firstChild);
+            
+            // Обновляем общую прибыль в профиле
+            updateTotalProfit(profit);
+            
+            closeCostModal();
+            
+            // Показываем уведомление
+            showNotification(`Прибыль по заказу: ${profit.toLocaleString()} ₽`);
+        }
+
+        function updateTotalProfit(newProfit) {
+            const profitElement = document.querySelector('.profit-amount');
+            const currentProfit = parseInt(profitElement.textContent.replace(/[^\d]/g, ''));
+            const totalProfit = currentProfit + newProfit;
+            profitElement.textContent = totalProfit.toLocaleString() + ' ₽';
+        }
+
+        function updateStock(button) {
+            const stockInput = button.parentElement.querySelector('.stock-input');
+            const newStock = stockInput.value;
+            
+            // Анимация обновления
+            button.textContent = 'Обновлено!';
+            button.style.background = '#4CAF50';
+            
+            setTimeout(() => {
+                button.textContent = 'Обновить';
+                button.style.background = '';
+            }, 1000);
+            
+            showNotification(`Количество обновлено: ${newStock} шт.`);
+        }
+
+        function exportToExcel() {
+            // Имитация экспорта в Excel
+            showNotification('Экспорт в Excel начат...');
+            
+            setTimeout(() => {
+                showNotification('Файл успешно экспортирован!');
+            }, 2000);
+        }
+
+        function connectAvito() {
+            // Заглушка для подключения Avito
+            showNotification('Подключение к Avito...');
+            
+            setTimeout(() => {
+                showNotification('Функция подключения к Avito находится в разработке');
+            }, 1500);
+        }
+
+        function openAIAssistant() {
+            // Заглушка для ИИ-ассистента
+            showNotification('🤖 Запуск ИИ-ассистента...');
+            
+            setTimeout(() => {
+                showNotification('ИИ-ассистент находится в разработке');
+            }, 2000);
+        }
+
+        function toggleAutoReply(toggle) {
+            toggle.classList.toggle('active');
+            const isActive = toggle.classList.contains('active');
+            const title = toggle.parentElement.querySelector('.auto-reply-title').textContent;
+            
+            if (isActive) {
+                showNotification(`Автоответ "${title}" включен`);
+            } else {
+                showNotification(`Автоответ "${title}" отключен`);
+            }
+        }
+
+        function toggleReminder(toggle) {
+            toggle.classList.toggle('active');
+            const isActive = toggle.classList.contains('active');
+            const title = toggle.parentElement.querySelector('.notification-title')?.textContent || 'Настройка';
+            
+            if (isActive) {
+                showNotification(`${title} включено`);
+            } else {
+                showNotification(`${title} отключено`);
+            }
+        }
+
+        function sendDeliveryReminder(productName) {
+            showPushNotification(`📱 Напоминание отправлено клиенту о доставке ${productName}`);
+            showNotification(`Напоминание о доставке ${productName} отправлено`);
+        }
+
+        function syncReviews() {
+            showNotification('🔄 Синхронизация отзывов...');
+            
+            setTimeout(() => {
+                showNotification('Отзывы успешно синхронизированы!');
+                showPushNotification('⭐ Получено 3 новых отзыва');
+            }, 2000);
+        }
+
+        function quickAction(action) {
+            const actions = {
+                'new-delivery': 'Создание новой доставки',
+                'track-delivery': 'Отслеживание доставки',
+                'schedule': 'Планирование расписания',
+                'reports': 'Генерация отчетов'
+            };
+            
+            showNotification(`🚀 ${actions[action]} запущено`);
+        }
+
+        function changeThemeColor(color) {
+            document.documentElement.style.setProperty('--primary-color', color);
+            showNotification('🎨 Цветовая схема обновлена');
+        }
+
+        function showPushNotification(message) {
+            const pushNotification = document.createElement('div');
+            pushNotification.className = 'push-notification';
+            pushNotification.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="font-size: 20px;">🔔</div>
+                    <div>${message}</div>
+                </div>
+            `;
+            
+            document.body.appendChild(pushNotification);
+            
+            setTimeout(() => {
+                pushNotification.style.animation = 'slideOutLeft 0.3s ease';
+                setTimeout(() => {
+                    document.body.removeChild(pushNotification);
+                }, 300);
+            }, 4000);
+        }
+
+        function checkLowStock() {
+            const stockInputs = document.querySelectorAll('.stock-input');
+            stockInputs.forEach(input => {
+                const stock = parseInt(input.value);
+                if (stock <= 2) {
+                    const productName = input.closest('.inventory-item').querySelector('.inventory-title').textContent;
+                    showPushNotification(`⚠️ Низкий остаток: ${productName} - ${stock} шт.`);
+                    
+                    // Показываем алерт в складе
+                    const stockAlert = document.getElementById('stockAlert');
+                    if (stockAlert) {
+                        stockAlert.style.display = 'flex';
+                        stockAlert.querySelector('.stock-alert div:last-child div:last-child').textContent = `${productName} - осталось ${stock} шт.`;
+                    }
+                }
+            });
+        }
+
+        // Симуляция новых заказов
+        function simulateNewOrder() {
+            const products = ['iPhone 15 Pro', 'MacBook Pro M3', 'iPad Pro', 'AirPods Max'];
+            const randomProduct = products[Math.floor(Math.random() * products.length)];
+            
+            setTimeout(() => {
+                showPushNotification(`🆕 Новый заказ: ${randomProduct}`);
+            }, Math.random() * 10000 + 5000); // Случайное время от 5 до 15 секунд
+        }
+
+        function showNotification(message) {
+            // Создаем уведомление
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #4CAF50;
+                color: white;
+                padding: 15px 20px;
+                border-radius: 8px;
+                z-index: 10000;
+                animation: slideIn 0.3s ease;
+                max-width: 300px;
+            `;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            // Удаляем уведомление через 3 секунды
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+
+        // Закрытие модального окна при клике вне его
+        window.onclick = function(event) {
+            const modal = document.getElementById('costModal');
+            if (event.target === modal) {
+                closeCostModal();
+            }
+        }
+
+        // Добавляем CSS для анимаций уведомлений
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Инициализация приложения
+        document.addEventListener('DOMContentLoaded', function() {
+            // Имитация загрузки данных с Avito API
+            console.log('Приложение загружено');
+            
+            // Показываем приветственное уведомление
+            setTimeout(() => {
+                showNotification('Добро пожаловать в Avito Manager!');
+            }, 1000);
+            
+            // Инициализация графика прибыли
+            initProfitChart();
+            
+            // Запуск симуляции уведомлений
+            simulateNewOrder();
+            
+            // Проверка низкого остатка товаров
+            checkLowStock();
+            
+            // Периодическая проверка остатков
+            setInterval(checkLowStock, 30000); // Каждые 30 секунд
+        });
+
+        function initProfitChart() {
+            const ctx = document.getElementById('profitChart');
+            if (!ctx) return;
+
+            // Данные для графика (последние 7 дней)
+            const labels = [];
+            const data = [];
+            
+            // Генерируем данные за последние 7 дней
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                labels.push(date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }));
+                
+                // Генерируем случайную прибыль от 2000 до 15000
+                data.push(Math.floor(Math.random() * 13000) + 2000);
+            }
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Прибыль (₽)',
+                        data: data,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#667eea',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: '#667eea',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Прибыль: ' + context.parsed.y.toLocaleString() + ' ₽';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: '#666',
+                                font: {
+                                    size: 12
+                                },
+                                callback: function(value) {
+                                    return value.toLocaleString() + ' ₽';
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#666',
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    elements: {
+                        point: {
+                            hoverBackgroundColor: '#667eea'
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html> 
